@@ -226,3 +226,161 @@ enum class MapperType {
     HumidityToLocation,
     LocationToHumidity
 }
+
+/*
+Notes:
+0..55 -> 0..55		offset 0
+56..92 -> 60..96	offset 4
+93..96 -> 56..59	offset 37
+97..inf -> 97..inf	offset 0
+
+0..68 -> 1..69		offset 1
+69..69 -> 0..0		offset -69
+
+0..55		offset 1
+56..68		offset 5
+69..69		offset -65
+70..92		offset 4
+93..96		offset 37
+97..inf		offset 0
+
+
+
+18..24		offset 70
+25..94		offset 7
+
+53
+
+7 1
+
+
+
+
+====
+
+0..55		offset = 1
+56..68		offset = 5
+69..69		offset = -69
+70..92		offset = 4
+93..96		offset = -37
+97..inf		offset = 0
+
+light -> temp
+45..63		offset 36
+77..99
+64..76
+
+0	1
+45	40
+56	40
+64	9
+69	8
+70	8
+77	-31
+93	-27
+97	-27
+100	0
+
+===
+
+
+temp = 78 => location = 82
+temp = 42 => location = 43
+temp = 82 => location = 86
+temp = 34 => location = 35
+
+light = 74 => location = 82
+light = 42 => location = 43
+light = 46 => location = 86
+light = 34 => location = 35
+
+water = 81 => location = 82
+water = 49 => location = 43
+water = 53 => location = 47
+water = 41 => location = 35
+79 -> 82
+14 -> 36
+55 -> 47
+13 -> 35
+1
+
+temp = 78 => location = 82
+temp = 42 => location = 43
+temp = 82 => location = 86
+temp = 34 => location = 35
+
+light = 74 => location = 82
+light = 42 => location = 43
+light = 46 => location = 83
+light = 34 => location = 35
+
+water = 81 => location = 82
+water = 49 => location = 43
+water = 53 => location = 47
+water = 41 => location = 35
+
+===
+
+myRanges
+otherRanges
+
+humidity -> location
+0..55 -> 0..55
+56..93 -> 60..96
+93..96 -> 56..59
+97..inf -> 97..inf
+
+inRanges	outRanges
+minimize outRanges
+
+temperature -> humidity
+0..68 -> 1..69
+69..69 -> 0..0
+70..inf -> 70..inf
+
+convert location's inRanges
+to my inRanges
+
+merge location's inRanges with my outRanges
+0..55
+	0..0, 1..55
+56..93
+	56..68, 69..69, 70..93
+93..96
+	93..96
+97..inf
+	97..inf
+
+convert to my inRanges
+0..0, 1..55
+	69..69, 1..55
+56..68, 69..69, 70..93
+
+=====
+
+next dude's inRange in terms of my inRange
+0..55 -> 0..55
+56..93 -> 60..96
+93..96 -> 56..59
+97..inf -> 97..inf
+
+myRanges
+0..68 -> 1..69
+69..69 -> 0..0
+70..inf -> 70..inf
+
+for each range, compare with my outRanges
+0..55
+	0..0 and 1..69
+56..93
+	0..68 and 69..69 and 70..inf
+93..96
+	70..inf
+97..inf
+	70..inf
+
+
+
+
+
+ */
