@@ -4,7 +4,7 @@ import org.baec23.util.readLines
 
 fun main() {
     val input = readLines(day = 3, isSample = false)
-    print(partTwo(input))
+    print(partOne(input))
 }
 
 private fun partTwo(input: List<String>): Int {
@@ -32,6 +32,7 @@ private fun partTwo(input: List<String>): Int {
 
 private fun partOne(input: List<String>): Int {
     val potentialNumbers = getPotentialNumbers(input)
+    println("num potentialNumbers = ${potentialNumbers.size}")
     var partNumberSum = 0
     potentialNumbers.forEach { potentialNumber ->
         if (isPartNumber(input, potentialNumber.lineNum, potentialNumber.startIndex, potentialNumber.endIndex)) {

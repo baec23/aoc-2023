@@ -31,35 +31,29 @@ private sealed class PokerHand(
             val bid = splitString.last().toInt()
             val cards = handString.map { Card(it) }
             val cardValues = cards.map { it.value }
-            val cardGroups = cards.groupBy { it }.values.toList().sortedByDescending { it.size }
-//            val cardGroups =
-//                cards.sortedDescending().groupBy { it }.values.toList()
-//                    .sortedByDescending { it.size }
+            val cardGroups = cards.groupBy { it }.values.toList().sortedByDescending { it.size }.toMutableList()
+            val jokers = cardGroups.find { list -> list.contains(Card('J')) }
+            if (jokers != null && cardGroups.size > 1) {
+                cardGroups.remove(jokers)
+                val newFirstGroup = cardGroups.first().toMutableList()
+                newFirstGroup.addAll(jokers)
+                cardGroups.removeAt(0)
+                cardGroups.add(0, newFirstGroup.toList())
+            }
 
             return when (cardGroups.size) {
                 1 -> {
-//                    FiveOfAKind(listOf(cardGroups.first().first().value), bid, handString)
                     FiveOfAKind(cardValues, bid, handString)
                 }
 
                 2 -> {
                     if (cardGroups.first().size == 4) {
-//                        FourOfAKind(
-//                            listOf(cardGroups.first().first().value, cardGroups.last().first().value),
-//                            bid,
-//                            handString
-//                        )
                         FourOfAKind(
                             cardValues,
                             bid,
                             handString
                         )
                     } else {
-//                        FullHouse(
-//                            listOf(cardGroups.first().first().value, cardGroups.last().first().value),
-//                            bid,
-//                            handString
-//                        )
                         FullHouse(
                             cardValues,
                             bid,
@@ -73,10 +67,8 @@ private sealed class PokerHand(
                     subValues.add(cardGroups[1].first().value)
                     subValues.add(cardGroups.last().first().value)
                     if (cardGroups.first().size == 3) {
-//                        ThreeOfAKind(subValues.toList(), bid, handString)
                         ThreeOfAKind(cardValues, bid, handString)
                     } else {
-//                        TwoPair(subValues.toList(), bid, handString)
                         TwoPair(cardValues, bid, handString)
                     }
                 }
@@ -84,12 +76,10 @@ private sealed class PokerHand(
                 4 -> {
                     val subValues = mutableListOf(cardGroups.first().first().value)
                     subValues.addAll(cardGroups.takeLast(3).flatten().map { it.value })
-//                    OnePair(subValues.toList(), bid, handString)
                     OnePair(cardValues, bid, handString)
                 }
 
                 5 -> {
-//                    HighCard(cardGroups.flatten().map { it.value }, bid, handString)
                     HighCard(cardValues, bid, handString)
                 }
 
@@ -165,16 +155,16 @@ private data class Card(val cardChar: Char) : Comparable<Card> {
         'A' -> 12
         'K' -> 11
         'Q' -> 10
-        'J' -> 9
-        'T' -> 8
-        '9' -> 7
-        '8' -> 6
-        '7' -> 5
-        '6' -> 4
-        '5' -> 3
-        '4' -> 2
-        '3' -> 1
-        '2' -> 0
+        'J' -> 0
+        'T' -> 9
+        '9' -> 8
+        '8' -> 7
+        '7' -> 6
+        '6' -> 5
+        '5' -> 4
+        '4' -> 3
+        '3' -> 2
+        '2' -> 1
         else -> throw Exception("Invalid Card")
     }
 
