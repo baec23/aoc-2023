@@ -3,11 +3,12 @@ package org.baec23.day10
 import org.baec23.util.readLines
 
 fun main() {
-    val input = readLines(day = 10, isSample = true)
+    val input = readLines(day = 10, isSample = false)
     println(partTwo(input))
 }
 
 private fun partTwo(input: List<String>): Long {
+    //Find 'S'
     var startY = 0
     var startX = 0
     for (i in input.indices) {
@@ -19,6 +20,8 @@ private fun partTwo(input: List<String>): Long {
             }
         }
     }
+
+    //Find Pipes in path
     var pathPipes = emptyList<Pipe>()
     var startDirections = mutableListOf<Direction>()
     //North
@@ -48,7 +51,6 @@ private fun partTwo(input: List<String>): Long {
         startDirections.add(Direction.East)
     }
 
-
     //South
     val southResult = walkIt(
         grid = input,
@@ -77,6 +79,7 @@ private fun partTwo(input: List<String>): Long {
         startDirections.add(Direction.West)
     }
 
+    //Replace 'S' with correct Pipe
     val startPipeChar = when {
         startDirections.first() == Direction.North && startDirections.last() == Direction.South -> '|'
         startDirections.first() == Direction.South && startDirections.last() == Direction.North -> '|'
@@ -99,128 +102,76 @@ private fun partTwo(input: List<String>): Long {
     }
     val path = pathPipes.toMutableList()
     path.add(Pipe(char = startPipeChar, y = startY, x = startX))
+    //Do Area Calculation
 
+    val pathIntersections = path.groupBy { it.y }.mapValues { it ->
+        it.value.getIntersectionLocations()
+    }
 
-    val seen = HashSet<Pair<Int, Int>>()
-    var area = 0L
+    val pathSet = path.map { Pair(it.x, it.y) }.toHashSet()
+    var toReturn = 0L
     for (row in input.indices) {
         for (col in input[row].indices) {
-            val arr = findArea(input, path, col, row, seen)
-            if (arr != -1L) {
-                val sortedRow = path.filter { it.y == row }.sortedBy { it.x }
-                var currStartPipeIndex = findNextOpenIndex(sortedRow, 0)
-                var currEndPipeIndex = findNextCloseIndex(sortedRow, currStartPipeIndex + 1)
-                val potentialRanges = mutableListOf<Pair<Int, Int>>()
-                while (currStartPipeIndex != -1 && currEndPipeIndex != -1) {
-                    val startPipe = path[currStartPipeIndex]
-                    val endPipe = path[currEndPipeIndex]
-                    potentialRanges.add(Pair(startPipe.x, endPipe.x))
-                    currStartPipeIndex = findNextOpenIndex(sortedRow, currEndPipeIndex)
-                    currEndPipeIndex = findNextCloseIndex(sortedRow, currStartPipeIndex + 1)
-                }
-                var shouldAdd = false
-                potentialRanges.forEach {
-                    if (col in it.first..it.second) {
-                        shouldAdd = true
+            if (!pathSet.contains(Pair(col, row))) {
+                val pathRow = pathIntersections[row]
+                pathRow?.let {
+                    if (isInside(col, it)) {
+                        toReturn++
                     }
-                }
-                if (shouldAdd) {
-                    area += arr
                 }
             }
         }
     }
-    return area
-
-
-    //startX startY
-
-//    val pathGroupedByY = path.sortedBy { it.y }.groupBy { it.y }.values.toList()
-//    var toReturn = 0L
-
-//    pathGroupedByY.forEach { line ->
-////        val sortedLine = line.sortedBy{it.x}
-////        val potentialLengths = mutableListOf<Long>()
-////        val filtered = sortedLine.filter { it.char != '-' }
-////        for(i in 1..<filtered.size){
-////            potentialLengths.add(filtered[i].x - filtered[i-1].x - 1L)
-////        }
-////        val a = 1+2
-//
-//        val potentialAreaRanges = mutableListOf<Long>()
-//        val sortedLine = line.sortedBy { it.x }
-//        var currSectionStartIndex = findNextOpenIndex(sortedLine, 0)
-//        var currSectionEndIndex = findNextCloseIndex(sortedLine, currSectionStartIndex + 1)
-//        println("line = ${sortedLine.map { it.char }}")
-//        while (currSectionStartIndex != -1 && currSectionEndIndex != -1) {
-//            val startPipe = sortedLine[currSectionStartIndex]
-//            val endPipe = sortedLine[currSectionEndIndex]
-//            potentialAreaRanges.add(endPipe.x - startPipe.x - 1L)
-//            println("\tfound range from - ${startPipe.char} to ${endPipe.char}")
-//            currSectionStartIndex = findNextOpenIndex(sortedLine, currSectionEndIndex)
-//            currSectionEndIndex = findNextCloseIndex(sortedLine, currSectionStartIndex + 1)
-//        }
-//        potentialAreaRanges.forEachIndexed { index, potentialArea ->
-//            if(potentialAreaRanges.size % 2 == 0){
-//                toReturn += potentialArea
-//            }else{
-//
-//            }
-//            if (index % 2 == 0) {
-//                toReturn += potentialArea
-//            }
-//        }
-//    }
-
-//    return toReturn
+    return toReturn
 }
 
-private fun findNextOpenIndex(line: List<Pipe>, startIndex: Int): Int {
-    for (i in startIndex..<line.size) {
-        if (line[i].char == '|' || line[i].char == 'J' || line[i].char == '7') {
-            return i
+private fun List<Pipe>.getIntersectionLocations(): List<Int> {
+    val toReturn = mutableListOf<Int>()
+    //find FJ and L7
+    var currOpenCorner: Char? = null
+    var currOpenCornerPos: Int? = null
+    this.sortedBy { it.x }.forEach { pipe ->
+        when (pipe.char) {
+            '|' -> toReturn.add(pipe.x)
+            'F', 'L' -> {
+                if (currOpenCorner != null) {
+                    throw Exception("What")
+                }
+                currOpenCorner = pipe.char
+                currOpenCornerPos = pipe.x
+            }
+
+            '7' -> {
+                if (currOpenCorner == null) {
+                    throw Exception("Super What")
+                }
+                if (currOpenCorner == 'L') {
+                    toReturn.add(currOpenCornerPos!!)
+                }
+                currOpenCorner = null
+                currOpenCornerPos = null
+            }
+
+            'J' -> {
+                if (currOpenCorner == null) {
+                    throw Exception("Super What")
+                }
+                if (currOpenCorner == 'F') {
+                    toReturn.add(currOpenCornerPos!!)
+                }
+                currOpenCorner = null
+                currOpenCornerPos = null
+            }
+
+            else -> {}
         }
     }
-    return -1
+    return toReturn.sorted().toList()
 }
 
-private fun findNextCloseIndex(line: List<Pipe>, startIndex: Int): Int {
-    for (i in startIndex..<line.size) {
-        if (line[i].char == '|' || line[i].char == 'L' || line[i].char == 'F') {
-            return i
-        }
-    }
-    return -1
-}
-
-private fun findArea(
-    grid: List<String>,
-    pipes: List<Pipe>,
-    x: Int,
-    y: Int,
-    seen: MutableSet<Pair<Int, Int>>
-): Long {
-    val currPair = Pair(x, y)
-    if (x !in grid[0].indices || y !in grid.indices) {
-        return -1L
-    }
-    if (seen.contains(currPair)) {
-        return 0L
-    }
-    val pipeLocs = pipes.map { Pair(it.x, it.y) }
-    if (pipeLocs.contains(currPair)) {
-        return 0
-    }
-    seen.add(currPair)
-    val north = findArea(grid, pipes, x, y - 1, seen)
-    val east = findArea(grid, pipes, x + 1, y, seen)
-    val south = findArea(grid, pipes, x, y + 1, seen)
-    val west = findArea(grid, pipes, x - 1, y, seen)
-    if (minOf(north, east, south, west) == -1L) {
-        return -1L
-    }
-    println("I'm part of it: ${y} , ${x}")
-    return 1 + north + east + south + west
+private fun isInside(col: Int, intersectionLocations: List<Int>): Boolean {
+    val numCrossings = intersectionLocations.count { it > col }
+    return numCrossings % 2 != 0
 }
 
 private fun walkIt(

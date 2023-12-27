@@ -16,3 +16,8 @@ fun readLines(day: Int, isSample: Boolean = false): List<String> {
 fun String.splitByWhitespace(): List<String> {
     return this.split("\\s+".toRegex())
 }
+
+fun String.splitByChar(char: Char): List<String> {
+    val regexSafeChar = Regex.escape(char.toString())
+    return this.split("${regexSafeChar}+".toRegex()).filter{it.isNotEmpty()}
+}
