@@ -46,16 +46,32 @@ private fun findReflection(list: List<List<Char>>): Int {
         val numToCheck = minOf(i + 1, list.size - (i + 1))
         var isReflection = true
 //        println("Checking ${i}")
+        var totalNumDiff = 0
         for (j in 0..<numToCheck) {
 //            println("Comparing...\n${list[i-j]}\n${list[i+j+1]}")
-            if (list[i - j] != list[i + j + 1]) {
+            val numDiff = calcNumDifferences(list[i-j], list[i+j+1])
+            totalNumDiff += numDiff
+            if (numDiff != 0) {
                 isReflection = false
             }
 //            println("isReflection = ${isReflection}")
         }
 //        println()
-        if (isReflection) {
+//        if (isReflection) {
+//            toReturn = i
+//        }
+        if(totalNumDiff == 1){
             toReturn = i
+            println("Hey this works I think... ${i}")
+        }
+    }
+    return toReturn
+}
+private fun calcNumDifferences(list1: List<Char>, list2: List<Char>):Int{
+    var toReturn = 0
+    for(i in list1.indices){
+        if(list1[i] != list2[i]){
+            toReturn++
         }
     }
     return toReturn
