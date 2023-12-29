@@ -1,7 +1,11 @@
 package org.baec23.day17
 
 import org.baec23.util.readLines
-import java.nio.file.Files.walk
+
+/*
+Try once without looping back
+Try again allowing loops but stop if total ever higher than without a loop
+ */
 
 fun main() {
     val input = readLines(day = 17, isSample = true)
@@ -9,132 +13,125 @@ fun main() {
 }
 
 private fun partOne(input: List<String>): Long {
-    val runner = Runner(input)
-    runner.run()
-    return 0
+    return walk(input,0,0,Direction.East, 1, 0, HashSet(), HashSet())
 }
 
-class Runner(val input: List<String>) {
-    private var currMin = Long.MAX_VALUE
-    fun run() : Long{
-        walk(input, 0, 0, Direction.East, 1, 0, emptyList())
-        return currMin
+private fun walk(
+    input: List<String>,
+    row: Int,
+    col: Int,
+    travelDirection: Direction,
+    numStraightMoves: Int,
+    currTotal: Long,
+    currSeen: Set<Pair<Int, Int>>,
+    loopSeen: MutableSet<Pair<Int,Int>>
+): Long {
+    if (row !in input.indices || col !in input[0].indices || currSeen.contains(Pair(row,col)) || loopSeen.contains(Pair(row,col)) ) {
+        return Long.MAX_VALUE
     }
 
-    private fun walk(
-        input: List<String>,
-        row: Int,
-        col: Int,
-        travelDirection: Direction,
-        numStraightMoves: Int,
-        currTotal: Long,
-        seenStates: List<WalkState>
-    ) {
-        //if out of bounds, stop
-        if (row !in input.indices || col !in input[0].indices) {
-            return
-        }
-        if (currTotal > currMin) {
-            return
-        }
-        //if been here, stop
-        if (seenStates.contains(WalkState(row, col))) {
-            return
-        }
+    val myValue = input[row][col].digitToInt()
 
-        val myValue = input[row][col].digitToInt()
-        //if at end
-        if (row == input.lastIndex && col == input[0].lastIndex) {
-            val mTotal = currTotal + myValue
-            if (mTotal < currMin) {
-                currMin = mTotal
-            }
-            println(currTotal + myValue)
-            return
-        }
+    if (row == input.lastIndex && col == input[0].lastIndex) {
+        return myValue + currTotal
+    }
 
-        //try going straight
-        if (numStraightMoves < 3) {
-            val (newRow, newCol) = getNextRowCol(row, col, travelDirection)
-            walk(
+    //try going straight
+    var toReturn = Long.MAX_VALUE
+    if (numStraightMoves < 3) {
+        val (newRow, newCol) = getNextRowCol(row, col, travelDirection)
+        val straightSeen = currSeen.toMutableSet()
+        straightSeen.add(Pair(row,col))
+        toReturn = minOf(
+            toReturn, walk(
                 input,
                 newRow,
                 newCol,
                 travelDirection,
                 numStraightMoves + 1,
                 currTotal + myValue,
-                seenStates + WalkState(row, col)
+                straightSeen.toSet(),
+                loopSeen
             )
-        }
+        )
+    }
 
-        //try going left
-        val leftDirection = travelDirection.left()
-        val (leftRow, leftCol) = getNextRowCol(row, col, leftDirection)
-        walk(
+    //try going left
+    val leftDirection = travelDirection.left()
+    val (leftRow, leftCol) = getNextRowCol(row, col, leftDirection)
+    val leftSeen = currSeen.toMutableSet()
+    leftSeen.add(Pair(row,col))
+    toReturn = minOf(
+        toReturn, walk(
             input,
             leftRow,
             leftCol,
             leftDirection,
             1,
             currTotal + myValue,
-            seenStates + WalkState(row, col)
+            leftSeen.toSet(),
+            loopSeen
         )
+    )
 
-        //try going right
-        val rightDirection = travelDirection.right()
-        val (rightRow, rightCol) = getNextRowCol(row, col, rightDirection)
-        walk(
+    //try going right
+    val rightDirection = travelDirection.right()
+    val (rightRow, rightCol) = getNextRowCol(row, col, rightDirection)
+    val rightSeen = currSeen.toMutableSet()
+    rightSeen.add(Pair(row,col))
+    toReturn = minOf(
+        toReturn, walk(
             input,
             rightRow,
             rightCol,
             rightDirection,
             1,
             currTotal + myValue,
-            seenStates + WalkState(row, col)
+            rightSeen.toSet(),
+            loopSeen
         )
-    }
-
-    private data class WalkState(
-        val row: Int,
-        val col: Int,
-//        val travelDirection: Direction,
-//        val numStraightMoves: Int
     )
-
-    private fun Direction.left(): Direction {
-        return when (this) {
-            Direction.North -> Direction.West
-            Direction.East -> Direction.North
-            Direction.South -> Direction.East
-            Direction.West -> Direction.South
-        }
+    if(toReturn == Long.MAX_VALUE){
+        loopSeen.add(Pair(row,col))
     }
 
-    private fun Direction.right(): Direction {
-        return when (this) {
-            Direction.North -> Direction.East
-            Direction.East -> Direction.South
-            Direction.South -> Direction.West
-            Direction.West -> Direction.North
-        }
-    }
+    return toReturn
+}
 
-    private fun getNextRowCol(row: Int, col: Int, direction: Direction): Pair<Int, Int> {
-        var newRow = row
-        var newCol = col
-        when (direction) {
-            Direction.North -> newRow--
-            Direction.East -> newCol++
-            Direction.South -> newRow++
-            Direction.West -> newCol--
-        }
-        return Pair(newRow, newCol)
-    }
-
-    private enum class Direction {
-        North,
-        East,
-        South,
-        West
+private fun Direction.left(): Direction {
+    return when (this) {
+        Direction.North -> Direction.West
+        Direction.East -> Direction.North
+        Direction.South -> Direction.East
+        Direction.West -> Direction.South
     }
 }
+
+private fun Direction.right(): Direction {
+    return when (this) {
+        Direction.North -> Direction.East
+        Direction.East -> Direction.South
+        Direction.South -> Direction.West
+        Direction.West -> Direction.North
+    }
+}
+
+private fun getNextRowCol(row: Int, col: Int, direction: Direction): Pair<Int, Int> {
+    var newRow = row
+    var newCol = col
+    when (direction) {
+        Direction.North -> newRow--
+        Direction.East -> newCol++
+        Direction.South -> newRow++
+        Direction.West -> newCol--
+    }
+    return Pair(newRow, newCol)
+}
+
+private enum class Direction {
+    North,
+    East,
+    South,
+    West
+}
+
